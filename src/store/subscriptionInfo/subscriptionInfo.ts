@@ -1,4 +1,4 @@
-import { GetSubscriptionInfoByShortUuidCommand } from '@remnawave/backend-contract'
+import { GetSubscriptionInfoByShortUuidCommand, GetUserByTelegramIdCommand } from '@remnawave/backend-contract'
 import { create } from 'zustand'
 
 import { IActions, IState } from './interfaces'
@@ -27,15 +27,23 @@ export const useSubscriptionInfoStore = create<IActions & IState>()((set) => ({
 
 export const useSubscriptionInfoStoreActions = () =>
     useSubscriptionInfoStore((store) => store.actions)
+	
+export type ExtendedSubscription =
+	GetSubscriptionInfoByShortUuidCommand.Response['response'] & {
+		userObject?: GetUserByTelegramIdCommand.Response['response'][0]
+		subpageConfigUuid?: string | null
+	}
 
 export const useSubscriptionInfoStoreInfo = () => useSubscriptionInfoStore((state) => state)
 
-export const useSubscription = (): GetSubscriptionInfoByShortUuidCommand.Response['response'] => {
+export const useSubscription = (): ExtendedSubscription => {
     const subscription = useSubscriptionInfoStore((state) => state.subscription)
+
     if (!subscription) {
         throw new Error(
             'useSubscription must be used after subscription is loaded (after RootLayout gate)'
         )
     }
+
     return subscription
 }

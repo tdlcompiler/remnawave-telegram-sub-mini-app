@@ -80,18 +80,19 @@ function RootInner({ children }: PropsWithChildren) {
     const [errorConnect, setErrorConnect] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
-    if (miniApp.mount.isAvailable()) {
-        miniApp.mount()
-    }
-    if (miniApp.setHeaderColor.isAvailable()) {
-        miniApp.setHeaderColor('#161b22')
-        miniApp.headerColor()
-    }
+	useEffect(() => {
+		if (miniApp.mount.isAvailable()) {
+			miniApp.mount()
+		}
 
-    if (miniApp.setBackgroundColor.isAvailable()) {
-        miniApp.setBackgroundColor('#161b22')
-        miniApp.backgroundColor()
-    }
+		if (miniApp.setHeaderColor.isAvailable()) {
+			miniApp.setHeaderColor('#161b22')
+		}
+
+		if (miniApp.setBackgroundColor.isAvailable()) {
+			miniApp.setBackgroundColor('#161b22')
+		}
+	}, [])
 
     const initDataUser = useSignal(initData.user)
     // Set the user locale.
@@ -112,9 +113,12 @@ function RootInner({ children }: PropsWithChildren) {
                 try {
                     const subscription = await fetchUserByTelegramId(initDataRaw as string)
                     if (subscription) {
-                        subscriptionActions.setSubscriptionInfo({
-                            subscription
-                        })
+						subscriptionActions.setSubscriptionInfo({
+							subscription: {
+								...subscription,
+								userObject: subscription.userObject
+							}
+						})
                     }
                 } catch (error) {
                     if (error instanceof AxiosError && error.code === 'ERR_GET_SUB_LINK') {

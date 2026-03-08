@@ -1,10 +1,19 @@
-import { GetSubscriptionInfoByShortUuidCommand } from '@remnawave/backend-contract'
+import {
+    GetSubscriptionInfoByShortUuidCommand,
+    GetUserByTelegramIdCommand
+} from '@remnawave/backend-contract'
 import { consola } from 'consola'
 import { AxiosError } from 'axios'
 
+type SubscriptionWithUser =
+    GetSubscriptionInfoByShortUuidCommand.Response['response'] & {
+        userObject: GetUserByTelegramIdCommand.Response['response'][0]
+        subpageConfigUuid?: string | null
+    }
+
 export async function fetchUserByTelegramId(
     initData: string
-): Promise<GetSubscriptionInfoByShortUuidCommand.Response['response']> {
+): Promise<SubscriptionWithUser> {
     try {
         const res = await fetch(`/api/getSubscriptionInfo`, {
             method: 'POST',
@@ -15,31 +24,35 @@ export async function fetchUserByTelegramId(
         })
 
         if (res.ok) {
-            return await res.json()
-        } else {
-            let errorBody: { message?: string } | null = null
-            try {
-                errorBody = await res.json()
-            } catch {
-                errorBody = null
-            }
+            const data: SubscriptionWithUser = await res.json()
+            return data
+        }
 
-            if (errorBody?.message === 'Error get sub link') {
-                throw new AxiosError('Error get sub link', 'ERR_GET_SUB_LINK')
-            }
+        let errorBody: { message?: string } | null = null
 
-            if (res.status === 422) {
-                throw new Error(errorBody?.message ?? 'Users not found')
-            }
-            if (res.status === 400) {
-                throw new Error('Bad request')
-            }
-            if (res.status === 500) {
-                throw new Error('Connect to server')
-            }
+        try {
+            errorBody = await res.json()
+        } catch {
+            errorBody = null
+        }
 
+        if (errorBody?.message === 'Error get sub link') {
             throw new AxiosError('Error get sub link', 'ERR_GET_SUB_LINK')
         }
+
+        if (res.status === 422) {
+            throw new Error(errorBody?.message ?? 'Users not found')
+        }
+
+        if (res.status === 400) {
+            throw new Error('Bad request')
+        }
+
+        if (res.status === 500) {
+            throw new Error('Connect to server')
+        }
+
+        throw new AxiosError('Error get sub link', 'ERR_GET_SUB_LINK')
     } catch (error) {
         consola.error('Fail get user by telegram Id:', error)
         throw error

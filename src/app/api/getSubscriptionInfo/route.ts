@@ -58,7 +58,8 @@ export async function POST(request: Request) {
             })
         }
 
-        const shortUuid = result.data.response[0].shortUuid
+		const userObject = result.data.response[0]
+        const shortUuid = userObject.shortUuid
 
         const subpageConfig = await instance.request<GetSubpageConfigByShortUuidCommand.Response>({
             method: GetSubpageConfigByShortUuidCommand.endpointDetails.REQUEST_METHOD,
@@ -127,13 +128,14 @@ export async function POST(request: Request) {
             }
         }
 
-        return new Response(
-            JSON.stringify({
-                ...response,
-                subpageConfigUuid: subpageConfig.data.response.subpageConfigUuid
-            }),
-            { status: 200 }
-        )
+		return new Response(
+			JSON.stringify({
+				...response,
+				userObject,
+				subpageConfigUuid: subpageConfig.data.response.subpageConfigUuid
+			}),
+			{ status: 200 }
+		)
     } catch (error) {
         if (error instanceof AxiosError) {
             if (error.response?.status === 404) {

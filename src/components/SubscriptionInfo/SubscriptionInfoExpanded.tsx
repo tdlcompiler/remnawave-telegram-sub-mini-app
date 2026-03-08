@@ -14,10 +14,31 @@ import { getExpirationTextUtil } from '@/utils/configParser'
 import { InfoBlock } from '@/components/InfoBlock/InfoBlock'
 import { formatDate } from '@/utils/configParser'
 
+function deriveDisplayName(
+    description: string | null | undefined,
+    username: string
+): string {
+    if (!description) return username;
+
+    const trimmed = description.trim();
+    if (!trimmed) return username;
+
+    if (trimmed.includes('\n')) {
+        return trimmed.split(/\r?\n/)[0].trim();
+    }
+
+    const words = trimmed.split(/\s+/);
+    if (words.length >= 2) {
+        return words[0];
+    }
+
+    return trimmed;
+}
+
 export const SubscriptionInfoExpanded = () => {
     const { t, currentLang, baseTranslations } = useTranslation()
-    const subscription = useSubscription()
 
+	const subscription = useSubscription()
     const { user } = subscription
 
     const getStatusAndIcon = (): {
@@ -52,95 +73,98 @@ export const SubscriptionInfoExpanded = () => {
     const statusInfo = getStatusAndIcon()
     const gradientColor = getColorGradientSolid(statusInfo.color)
 
-    return (
-        <Card
-            className="glass-card"
-            p={{ base: 'sm', xs: 'md', sm: 'lg', md: 'xl' }}
-            radius="lg"
-            style={{ zIndex: 3 }}
-        >
-            <Stack gap="sm">
-                <Group gap="sm" justify="space-between">
-                    <Group gap="xs" style={{ minWidth: 0, flex: 1 }} wrap="nowrap">
-                        <ThemeIcon
-                            color={statusInfo.color}
-                            radius="xl"
-                            size="36"
+
+    const displayName = deriveDisplayName(subscription.userObject?.description, user.username);
+
+	return (
+    <Card
+        className="glass-card"
+        p={{ base: 'sm', xs: 'md', sm: 'lg', md: 'xl' }}
+        radius="lg"
+        style={{ zIndex: 3 }}
+    >
+        <Stack gap="sm">
+            <Group gap="sm" justify="space-between">
+                <Group gap="xs" style={{ minWidth: 0, flex: 1 }} wrap="nowrap">
+                    <ThemeIcon
+                        color={statusInfo.color}
+                        radius="xl"
+                        size="36"
+                        style={{
+                            background: gradientColor.background,
+                            border: gradientColor.border,
+                            boxShadow: gradientColor.boxShadow,
+                            flexShrink: 0
+                        }}
+                        variant="light"
+                    >
+                        {statusInfo.icon}
+                    </ThemeIcon>
+
+                    <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
+                        <Title
+                            c="white"
+                            fw={600}
+                            order={5}
                             style={{
-                                background: gradientColor.background,
-                                border: gradientColor.border,
-                                boxShadow: gradientColor.boxShadow,
-                                flexShrink: 0
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
                             }}
-                            variant="light"
                         >
-                            {statusInfo.icon}
-                        </ThemeIcon>
-
-                        <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-                            <Title
-                                c="white"
-                                fw={600}
-                                order={5}
-                                style={{
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap'
-                                }}
-                            >
-                                {user.username}
-                            </Title>
-                            <Text c={user.daysLeft === 0 ? 'red' : 'dimmed'} fw={600} size="xs">
-                                {getExpirationTextUtil(
-                                    user.expiresAt,
-                                    currentLang,
-                                    baseTranslations
-                                )}
-                            </Text>
-                        </Stack>
-                    </Group>
+                            {displayName}
+                        </Title>
+                        <Text c={user.daysLeft === 0 ? 'red' : 'dimmed'} fw={600} size="xs">
+                            {getExpirationTextUtil(
+                                user.expiresAt,
+                                currentLang,
+                                baseTranslations
+                            )}
+                        </Text>
+                    </Stack>
                 </Group>
+            </Group>
 
-                <SimpleGrid cols={{ base: 2, xs: 2, sm: 2 }} spacing="xs" verticalSpacing="xs">
-                    <InfoBlock
-                        color="blue"
-                        icon={<IconUserScan size={16} />}
-                        title={t(baseTranslations.name)}
-                        value={user.username}
-                    />
+            <SimpleGrid cols={{ base: 2, xs: 2, sm: 2 }} spacing="xs" verticalSpacing="xs">
+                <InfoBlock
+                    color="blue"
+                    icon={<IconUserScan size={16} />}
+                    title={t(baseTranslations.name)}
+                    value={displayName}
+                />
 
-                    <InfoBlock
-                        color={user.userStatus === 'ACTIVE' ? 'green' : 'red'}
-                        icon={
-                            user.userStatus === 'ACTIVE' ? (
-                                <IconCheck size={16} />
-                            ) : (
-                                <IconX size={16} />
-                            )
-                        }
-                        title={t(baseTranslations.status)}
-                        value={
-                            user.userStatus === 'ACTIVE'
-                                ? t(baseTranslations.active)
-                                : t(baseTranslations.inactive)
-                        }
-                    />
+                <InfoBlock
+                    color={user.userStatus === 'ACTIVE' ? 'green' : 'red'}
+                    icon={
+                        user.userStatus === 'ACTIVE' ? (
+                            <IconCheck size={16} />
+                        ) : (
+                            <IconX size={16} />
+                        )
+                    }
+                    title={t(baseTranslations.status)}
+                    value={
+                        user.userStatus === 'ACTIVE'
+                            ? t(baseTranslations.active)
+                            : t(baseTranslations.inactive)
+                    }
+                />
 
-                    <InfoBlock
-                        color="red"
-                        icon={<IconCalendar size={16} />}
-                        title={t(baseTranslations.expires)}
-                        value={formatDate(user.expiresAt, currentLang, baseTranslations)}
-                    />
+                <InfoBlock
+                    color="red"
+                    icon={<IconCalendar size={16} />}
+                    title={t(baseTranslations.expires)}
+                    value={formatDate(user.expiresAt, currentLang, baseTranslations)}
+                />
 
-                    <InfoBlock
-                        color="yellow"
-                        icon={<IconArrowsUpDown size={16} />}
-                        title={t(baseTranslations.bandwidth)}
-                        value={`${user.trafficUsed} / ${user.trafficLimit === '0' ? '∞' : user.trafficLimit}`}
-                    />
-                </SimpleGrid>
-            </Stack>
-        </Card>
-    )
+                <InfoBlock
+                    color="yellow"
+                    icon={<IconArrowsUpDown size={16} />}
+                    title={t(baseTranslations.bandwidth)}
+                    value={`${user.trafficUsed} / ${user.trafficLimit === '0' ? '∞' : user.trafficLimit}`}
+                />
+            </SimpleGrid>
+        </Stack>
+    </Card>
+)
 }
